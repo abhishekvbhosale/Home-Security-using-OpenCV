@@ -1,15 +1,38 @@
-import face_recognition
-from tkinter import Label
 from cv2.cv2 import VideoCapture
 from PIL import Image, ImageTk
 from idlelib import window
+from tkinter import Label
 from tkinter.ttk import *
+import face_recognition
 from tkinter import *
+import datetime
 import numpy as np
 import pickle
 import PIL
 import cv2
 import os
+import re
+import smtplib
+import imghdr
+from email.message import EmailMessage
+
+
+
+email_address = 'mailforcoding312@gmail.com'            #email id and password for login
+email_password = 'pythoncoder312'
+
+final_dir = 'mailing'               #the folder where photos will be saved
+
+
+msg = EmailMessage()                            #the whole body for emailing
+msg['Subject'] = 'Faces Detected'
+msg['From'] = email_address
+msg['To'] = 'abhishekv.bhosale@gmail.com'      #email where to sent
+msg.set_content('Pictures')
+
+
+
+
 
 FACE_DECT = Tk()
 FACE_DECT.title("FACE DETECTION FOR HOME SECURITY")
@@ -112,7 +135,9 @@ def show_frame():
         # Since order is being preserved, we check if any face was found then grab index
         # then label (name) of first matching known face withing a tolerance
         match = None
-        if True in results:  # If at least one is true, get a name of first of found labels
+
+        if True in results: # If at least one is true, get a name of first of found labels
+
             match = known_names[results.index(True)]
             #print(f' - {match} from {results}')
 
@@ -137,6 +162,18 @@ def show_frame():
             # Wite a name
             cv2.putText(image, match, (face_location[3] + 10, face_location[2] + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), FONT_THICKNESS)
 
+            #datet = datetime.datetime.now()
+            #datet = re.sub("[ :.-]", "", datet)
+            #print(datet)
+            x = datetime.datetime.now() 
+            date2 =  x.strftime("%x") +' at '+ x.strftime("%X")      # %x is used for giving date and %X is used for time 24hrs type
+            date2 = date2.replace("/","-")
+            date2 = date2.replace(":",".")
+            imgname = "./mailing/" + date2 + ".jpg"
+            #print("imgname:", imgname)
+
+            cv2.imwrite(imgname, image)
+
     # Show image
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -150,5 +187,24 @@ def show_frame():
      #   break
 show_frame()
 FACE_DECT.mainloop()
+
+#The whole code for getting image from folder and sending all of them via email
+
+for name in os.listdir(final_dir):              #to go through each file from final_dir which is mailing
+    #print(name)
+    with open(f'mailing/{name}', 'rb') as f:    #this f string gives the complete path of the image from folder
+        file_data = f.read()
+        file_type = imghdr.what(f.name)
+        file_name = f.name
+
+    msg.add_attachment(file_data, maintype='image', subtype=file_type, filename=file_name)
+
+with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+
+    smtp.login(email_address, email_password)
+
+    smtp.send_message(msg)
+
+print('Everything is Done gg!!!!')
     #cv2.waitKey(0)
     #cv2.destroyWindow(filename)
